@@ -1,0 +1,37 @@
+{
+  "name": "@davoxi/auth",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-router-dom": "^7.0.0",
+    "@mui/material": "^7.0.0",
+    "@emotion/react": "^11.0.0",
+    "@emotion/styled": "^11.0.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "react": "^19.0.0",
+    "@types/react": "^19.0.0",
+    "react-router-dom": "^7.0.0",
+    "@mui/material": "^7.0.0",
+    "@emotion/react": "^11.0.0",
+    "@emotion/styled": "^11.0.0"
+  }
+}
