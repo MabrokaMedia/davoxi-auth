@@ -55,12 +55,26 @@ function createRefreshToken(baseUrl: string) {
   };
 }
 
+/** Read the Cloudflare Access JWT from the CF_Authorization cookie (if present). */
+function getCfAccessToken(): string | null {
+  try {
+    const match = document.cookie
+      .split('; ')
+      .find((c) => c.startsWith('CF_Authorization='));
+    return match ? match.split('=')[1] : null;
+  } catch {
+    return null;
+  }
+}
+
 async function request<T>(baseUrl: string, path: string, options: RequestInit = {}, retry = true): Promise<T> {
   const url = `${baseUrl}${path}`;
   const token = accessToken;
+  const cfToken = getCfAccessToken();
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(cfToken ? { 'Cf-Access-Jwt-Assertion': cfToken } : {}),
     ...options.headers,
   };
 
