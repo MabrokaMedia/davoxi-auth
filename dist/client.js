@@ -45,12 +45,26 @@ function createRefreshToken(baseUrl) {
         localStorage.setItem(STORAGE_REFRESH, data.refresh_token);
     };
 }
+/** Read the Cloudflare Access JWT from the CF_Authorization cookie (if present). */
+function getCfAccessToken() {
+    try {
+        const match = document.cookie
+            .split('; ')
+            .find((c) => c.startsWith('CF_Authorization='));
+        return match ? match.split('=')[1] : null;
+    }
+    catch {
+        return null;
+    }
+}
 async function request(baseUrl, path, options = {}, retry = true) {
     const url = `${baseUrl}${path}`;
     const token = accessToken;
+    const cfToken = getCfAccessToken();
     const headers = {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(cfToken ? { 'Cf-Access-Jwt-Assertion': cfToken } : {}),
         ...options.headers,
     };
     const res = await fetch(url, { ...options, headers });
