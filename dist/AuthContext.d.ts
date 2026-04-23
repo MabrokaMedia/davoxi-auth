@@ -35,7 +35,12 @@ export interface AuthProviderProps {
     apiUrl: string;
     onLogout?: () => void;
     idleTimeoutMs?: number;
+    /** Pre-seeded access token for admin impersonation. Bypasses the
+     *  normal refresh-token restore and sets the in-memory token directly.
+     *  The caller is responsible for consuming and clearing the token from
+     *  the URL before passing it here. */
+    impersonateToken?: string | null;
 }
-export declare function AuthProvider({ children, apiUrl, onLogout, idleTimeoutMs }: AuthProviderProps): import("react/jsx-runtime").JSX.Element;
+export declare function AuthProvider({ children, apiUrl, onLogout, idleTimeoutMs, impersonateToken }: AuthProviderProps): import("react/jsx-runtime").JSX.Element;
 export declare function useAuth(): AuthContextValue;
 //# sourceMappingURL=AuthContext.d.ts.map

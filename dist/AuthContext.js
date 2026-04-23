@@ -5,7 +5,7 @@ const AuthContext = createContext(null);
 const STORAGE_USER = 'voiceai_user';
 const DEFAULT_IDLE_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const WARNING_BEFORE = 2 * 60 * 1000; // warn 2 minutes before logout
-export function AuthProvider({ children, apiUrl, onLogout, idleTimeoutMs }) {
+export function AuthProvider({ children, apiUrl, onLogout, idleTimeoutMs, impersonateToken }) {
     const IDLE_TIMEOUT = idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT;
     const apiRef = useRef(createApi(apiUrl));
     // Update api client if apiUrl changes
@@ -14,7 +14,9 @@ export function AuthProvider({ children, apiUrl, onLogout, idleTimeoutMs }) {
     }, [apiUrl]);
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(null);
-    const [loading, setLoading] = useState(true);
+    // If an impersonate token is provided, skip the loading state entirely —
+    // the admin panel supplies a valid short-lived access token directly.
+    const [loading, setLoading] = useState(!impersonateToken);
     const [idleWarning, setIdleWarning] = useState(false);
     const logoutTimerRef = useRef(0);
     const warningTimerRef = useRef(0);
@@ -27,8 +29,17 @@ export function AuthProvider({ children, apiUrl, onLogout, idleTimeoutMs }) {
         setIdleWarning(false);
         onLogout?.();
     }, [onLogout]);
-    // Restore session on mount
+    // Seed in-memory access token for impersonation sessions
     useEffect(() => {
+        if (impersonateToken) {
+            setAccessToken(impersonateToken);
+            setToken(impersonateToken);
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // Restore session on mount (skipped when impersonating)
+    useEffect(() => {
+        if (impersonateToken)
+            return;
         const storedUser = localStorage.getItem(STORAGE_USER);
         const rt = localStorage.getItem(STORAGE_REFRESH);
         if (storedUser && rt) {

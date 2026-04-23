@@ -51,9 +51,14 @@ export interface AuthProviderProps {
   apiUrl: string;
   onLogout?: () => void;
   idleTimeoutMs?: number;
+  /** Pre-seeded access token for admin impersonation. Bypasses the
+   *  normal refresh-token restore and sets the in-memory token directly.
+   *  The caller is responsible for consuming and clearing the token from
+   *  the URL before passing it here. */
+  impersonateToken?: string | null;
 }
 
-export function AuthProvider({ children, apiUrl, onLogout, idleTimeoutMs }: AuthProviderProps) {
+export function AuthProvider({ children, apiUrl, onLogout, idleTimeoutMs, impersonateToken }: AuthProviderProps) {
   const IDLE_TIMEOUT = idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT;
 
   const apiRef = useRef(createApi(apiUrl));
@@ -64,7 +69,9 @@ export function AuthProvider({ children, apiUrl, onLogout, idleTimeoutMs }: Auth
 
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  // If an impersonate token is provided, skip the loading state entirely —
+  // the admin panel supplies a valid short-lived access token directly.
+  const [loading, setLoading] = useState(!impersonateToken);
   const [idleWarning, setIdleWarning] = useState(false);
   const logoutTimerRef = useRef<number>(0);
   const warningTimerRef = useRef<number>(0);
@@ -79,8 +86,17 @@ export function AuthProvider({ children, apiUrl, onLogout, idleTimeoutMs }: Auth
     onLogout?.();
   }, [onLogout]);
 
-  // Restore session on mount
+  // Seed in-memory access token for impersonation sessions
   useEffect(() => {
+    if (impersonateToken) {
+      setAccessToken(impersonateToken);
+      setToken(impersonateToken);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Restore session on mount (skipped when impersonating)
+  useEffect(() => {
+    if (impersonateToken) return;
     const storedUser = localStorage.getItem(STORAGE_USER);
     const rt = localStorage.getItem(STORAGE_REFRESH);
     if (storedUser && rt) {
