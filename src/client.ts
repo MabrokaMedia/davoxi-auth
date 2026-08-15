@@ -55,7 +55,25 @@ function createRefreshToken(baseUrl: string) {
   };
 }
 
-/** Read the Cloudflare Access JWT from the CF_Authorization cookie (if present). */
+/**
+ * Read the Cloudflare Access JWT from the CF_Authorization cookie (if present).
+ *
+ * The cookie is host-scoped to the app origin (e.g. admin.davoxi.com), so a
+ * cross-origin fetch to the API host never carries it. We therefore forward the
+ * token explicitly in two headers:
+ *
+ *  - `cf-access-token`: the header Cloudflare Access itself accepts as an
+ *    alternative to the cookie. Required when the API hostname/path is ALSO an
+ *    Access application destination (edge-gated) — without it Access answers
+ *    the fetch with a 302 to the login page, which the browser reports as
+ *    "Failed to fetch". Both header names must be listed in the Access app's
+ *    CORS "Access-Control-Allow-Headers" setting.
+ *  - `Cf-Access-Jwt-Assertion`: what the backend validates. Cloudflare sets
+ *    this itself when the request passes through Access; sending it too keeps
+ *    the client working if the API is ever fronted without edge Access.
+ *
+ * Requires the Access app cookie setting "HTTP Only" = off.
+ */
 function getCfAccessToken(): string | null {
   try {
     const match = document.cookie
@@ -74,7 +92,7 @@ async function request<T>(baseUrl: string, path: string, options: RequestInit = 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(cfToken ? { 'Cf-Access-Jwt-Assertion': cfToken } : {}),
+    ...(cfToken ? { 'cf-access-token': cfToken, 'Cf-Access-Jwt-Assertion': cfToken } : {}),
     ...options.headers,
   };
 
